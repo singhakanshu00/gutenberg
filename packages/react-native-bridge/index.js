@@ -226,7 +226,7 @@ export function useIsConnected() {
 	return { isConnected };
 }
 
-export function subscribeConnectionStatus( callback ) {
+function subscribeConnectionStatus( callback ) {
 	return gutenbergBridgeEvents.addListener(
 		'connectionStatusChange',
 		callback
