@@ -162,9 +162,7 @@ class DependencyExtractionWebpackPlugin {
 		);
 	}
 
-	/**
-	 * @param {webpack.Compilation} compilation
-	 */
+	/** @param {webpack.Compilation} compilation */
 	addAssets( compilation ) {
 		const {
 			combineAssets,
