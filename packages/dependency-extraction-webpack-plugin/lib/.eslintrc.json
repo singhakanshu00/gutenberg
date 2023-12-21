@@ -1,6 +1,8 @@
 {
-	// Use the default eslint parser. Prevent babel transforms.
-	"parser": "espree",
+	"parser": "@typescript-eslint/parser",
+	"parserOptions": {
+		"ecmaVersion": "2020"
+	},
 	"env": {
 		"node": true
 	}
