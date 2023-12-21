@@ -56,12 +56,9 @@ class DependencyExtractionWebpackPlugin {
 
 		/**
 		 * Offload externalization work to the ExternalsPlugin.
-		 * @type {webpack.ExternalsPlugin}
+		 * @type {webpack.ExternalsPlugin | undefined}
 		 */
-		this.externalsPlugin = new webpack.ExternalsPlugin(
-			'window',
-			this.externalizeWpDeps.bind( this )
-		);
+		this.externalsPlugin = undefined;
 	}
 
 	externalizeWpDeps( { request }, callback ) {
@@ -73,8 +70,7 @@ class DependencyExtractionWebpackPlugin {
 				externalRequest =
 					this.options.requestToExternalModule( request );
 			}
-		}
-		else if ( typeof this.options.requestToExternal === 'function' ) {
+		} else if ( typeof this.options.requestToExternal === 'function' ) {
 			externalRequest = this.options.requestToExternal( request );
 		}
 
@@ -91,12 +87,7 @@ class DependencyExtractionWebpackPlugin {
 		if ( externalRequest ) {
 			this.externalizedDeps.add( request );
 
-			return callback(
-				null,
-				this.useModules
-					? `module ${ externalRequest }`
-					: externalRequest
-			);
+			return callback( null, externalRequest );
 		}
 
 		return callback();
@@ -145,7 +136,14 @@ class DependencyExtractionWebpackPlugin {
 	apply( compiler ) {
 		this.useModules = Boolean( compiler.options.output?.module );
 
-		this.externalsPlugin.type = this.useModules ? 'module' : 'window';
+		/**
+		 * Offload externalization work to the ExternalsPlugin.
+		 * @type {webpack.ExternalsPlugin}
+		 */
+		this.externalsPlugin = new webpack.ExternalsPlugin(
+			this.useModules ? 'module' : 'window',
+			this.externalizeWpDeps.bind( this )
+		);
 
 		this.externalsPlugin.apply( compiler );
 
@@ -226,29 +224,21 @@ class DependencyExtractionWebpackPlugin {
 			}
 
 			const processModule = ( m ) => {
-				let isStatic = false;
-
-				if ( this.useModules ) {
-					for ( const {
-						dependency,
-					} of compilation.moduleGraph.getIncomingConnections( m ) ) {
-						if (
-							! (
-								compilation.moduleGraph.getParentBlock(
-									dependency
-								) instanceof AsyncDependenciesBlock
-							)
-						) {
-							isStatic = true;
-							break;
-						}
-					}
-				}
-
 				const { userRequest } = m;
 				if ( this.externalizedDeps.has( userRequest ) ) {
 					if ( this.useModules ) {
-						( isStatic ? chunkStaticDeps : chunkDynamicDeps ).add(
+						const isDynamic = Array.prototype.every.call(
+							compilation.moduleGraph.getIncomingConnections( m ),
+							( { dependency } ) => {
+								return (
+									compilation.moduleGraph.getParentBlock(
+										dependency
+									) instanceof AsyncDependenciesBlock
+								);
+							}
+						);
+
+						( isDynamic ? chunkDynamicDeps : chunkStaticDeps ).add(
 							userRequest
 						);
 					} else {
@@ -260,10 +250,9 @@ class DependencyExtractionWebpackPlugin {
 			};
 
 			// Search for externalized modules in all chunks.
-			const modulesIterable =
-				compilation.chunkGraph.getChunkModulesIterable( chunk );
-
-			for ( const chunkModule of modulesIterable ) {
+			for ( const chunkModule of compilation.chunkGraph.getChunkModulesIterable(
+				chunk
+			) ) {
 				processModule( chunkModule );
 				// Loop through submodules of ConcatenatedModule.
 				if ( chunkModule.modules ) {
@@ -291,25 +280,16 @@ class DependencyExtractionWebpackPlugin {
 				.digest( hashDigest )
 				.slice( 0, hashDigestLength );
 
-			const assetData = this.useModules
-				? {
-						// Get a sorted array so we can produce a stable, stringified representation.
-						dependencies: [
-							...Array.from( chunkStaticDeps )
-								.sort()
-								.map( ( id ) => ( { id, type: 'static' } ) ),
-							...Array.from( chunkDynamicDeps )
-								.sort()
-								.map( ( id ) => ( { id, type: 'dynamic' } ) ),
-						],
-						type: 'module',
-						version: contentHash,
-				  }
-				: {
-						// Get a sorted array so we can produce a stable, stringified representation.
-						dependencies: Array.from( chunkStaticDeps ).sort(),
-						version: contentHash,
-				  };
+			const assetData = {
+				dependencies: [
+					// Sort these so we can produce a stable, stringified representation.
+					...Array.from( chunkStaticDeps ).sort(),
+					...Array.from( chunkDynamicDeps )
+						.sort()
+						.map( ( id ) => ( { id, type: 'dynamic' } ) ),
+				],
+				version: contentHash,
+			};
 
 			if ( combineAssets ) {
 				combinedAssetsData[ chunkJSFile ] = assetData;
