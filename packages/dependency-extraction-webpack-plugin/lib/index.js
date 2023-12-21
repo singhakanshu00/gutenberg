@@ -168,11 +168,7 @@ class DependencyExtractionWebpackPlugin {
 						stage: compiler.webpack.Compilation
 							.PROCESS_ASSETS_STAGE_ANALYSE,
 					},
-					() => {
-						// console.log( 'add' );
-						this.addAssets( compilation );
-						// console.log( 'added' );
-					}
+					() => this.addAssets( compilation )
 				);
 			}
 		);
@@ -352,29 +348,23 @@ class DependencyExtractionWebpackPlugin {
 			chunk.files.add( assetFilename );
 		}
 
-		// console.log( 'x' );
-
 		if ( combineAssets ) {
 			const outputFolder = compilation.outputOptions.path;
 
-			// console.log( 'y' );
 			const assetsFilePath = path.resolve(
 				outputFolder,
 				combinedOutputFile ||
 					'assets.' + ( outputFormat === 'php' ? 'php' : 'json' )
 			);
-			// console.log( 'z' );
 			const assetsFilename = path.relative(
 				outputFolder,
 				assetsFilePath
 			);
-			// console.log( 'xx' );
 
 			// Add source into compilation for webpack to output.
 			compilation.assets[ assetsFilename ] = new RawSource(
 				this.stringify( combinedAssetsData )
 			);
-			// console.log( 'yy' );
 		}
 	}
 }
