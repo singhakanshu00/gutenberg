@@ -16,166 +16,194 @@ const configFixtures = fs.readdirSync( fixturesPath ).sort();
 describe.each( /** @type {const} */ ( [ 'scripts', 'modules' ] ) )(
 	'DependencyExtractionWebpackPlugin %s',
 	( moduleMode ) => {
-		describe.each( configFixtures )( 'Webpack `%s`', ( configCase ) => {
+		describe.each(
+			configFixtures /** .filter( ( x ) => x.includes( 'interactivity' ) ) /**/
+		)( 'Webpack `%s`', ( configCase ) => {
 			const testDirectory = path.join( fixturesPath, configCase );
-			const outputDirectory = path.join( __dirname, 'build', configCase );
+			const outputDirectory = path.join(
+				__dirname,
+				'build',
+				moduleMode,
+				configCase
+			);
 
 			beforeEach( () => {
-				rimraf( outputDirectory );
+				// rimraf( outputDirectory );
 				mkdirp( outputDirectory );
 			} );
 
 			// This afterEach is necessary to prevent watched tests from retriggering on every run.
-			afterEach( () => rimraf( outputDirectory ) );
+			// afterEach( () => rimraf( outputDirectory ) );
 
-			test( 'should produce expected output', () =>
-				new Promise( ( resolve ) => {
-					const options = Object.assign(
-						{
-							context: testDirectory,
-							entry: './index.js',
-							mode: 'production',
-							optimization: {
-								minimize: false,
-								chunkIds: 'named',
-								moduleIds: 'named',
-							},
-							output: {},
-							experiments: {},
+			test( 'should produce expected output', async () => {
+				const options = Object.assign(
+					{
+						target: 'es2024',
+						context: testDirectory,
+						entry: './index.js',
+						mode: 'production',
+						optimization: {
+							minimize: false,
+							chunkIds: 'named',
+							moduleIds: 'named',
 						},
-						require(
-							path.join( testDirectory, 'webpack.config.js' )
-						)
+						output: {
+							chunkFormat: 'commonjs',
+						},
+						experiments: {},
+					},
+					require( path.join( testDirectory, 'webpack.config.js' ) )
+				);
+				options.output.path = outputDirectory;
+
+				if ( moduleMode === 'modules' ) {
+					options.output.module = true;
+					options.output.chunkFormat = 'module';
+					options.output.library = options.output.library || {};
+					options.output.library.type = 'module';
+					options.experiments.outputModule = true;
+				}
+
+				/** @type {webpack.Stats} */
+				const stats = await new Promise( ( resolve, reject ) =>
+					webpack( options, ( err, _stats ) => {
+						if ( err ) {
+							return reject( err );
+						}
+						resolve( _stats );
+					} )
+				);
+
+				if ( stats.hasErrors() ) {
+					throw new Error(
+						stats.toString( { errors: true, all: false } )
 					);
-					options.output.path = outputDirectory;
+				}
 
-					if ( moduleMode === 'modules' ) {
-						options.output.module = true;
-						options.experiments.outputModule = true;
-					}
+				const assetFiles = glob(
+					`${ outputDirectory }/+(*.asset|assets).@(json|php)`
+				);
 
-					webpack( options, ( err, stats ) => {
-						expect( err ).toBeNull();
+				expect( assetFiles.length ).toBeGreaterThan( 0 );
 
-						const assetFiles = glob(
-							`${ outputDirectory }/+(*.asset|assets).@(json|php)`
-						);
+				// Asset files should match.
+				assetFiles.forEach( ( assetFile ) => {
+					const assetBasename = path.basename( assetFile );
 
-						expect( assetFiles.length ).toBeGreaterThan( 0 );
+					expect(
+						fs.readFileSync( assetFile, 'utf-8' )
+					).toMatchSnapshot(
+						`Asset file '${ assetBasename }' should match snapshot`
+					);
+				} );
 
-						// Asset files should match.
-						assetFiles.forEach( ( assetFile ) => {
-							const assetBasename = path.basename( assetFile );
+				const compareByModuleIdentifier = ( m1, m2 ) => {
+					const i1 = m1.identifier();
+					const i2 = m2.identifier();
+					if ( i1 < i2 ) return -1;
+					if ( i1 > i2 ) return 1;
+					return 0;
+				};
 
-							expect(
-								fs.readFileSync( assetFile, 'utf-8' )
-							).toMatchSnapshot(
-								`Asset file '${ assetBasename }' should match snapshot`
-							);
-						} );
-
-						const compareByModuleIdentifier = ( m1, m2 ) => {
-							const i1 = m1.identifier();
-							const i2 = m2.identifier();
-							if ( i1 < i2 ) return -1;
-							if ( i1 > i2 ) return 1;
-							return 0;
-						};
-
-						// Webpack stats external modules should match.
-						const externalModules = Array.from(
-							stats.compilation.modules
-						)
-							.filter( ( { externalType } ) => externalType )
-							.sort( compareByModuleIdentifier )
-							.map( ( module ) => ( {
-								externalType: module.externalType,
-								request: module.request,
-								userRequest: module.userRequest,
-							} ) );
-						expect( externalModules ).toMatchSnapshot(
-							'External modules should match snapshot'
-						);
-
-						resolve();
-					} );
-				} ) );
+				// Webpack stats external modules should match.
+				const externalModules = Array.from( stats.compilation.modules )
+					.filter( ( { externalType } ) => externalType )
+					.sort( compareByModuleIdentifier )
+					.map( ( module ) => ( {
+						externalType: module.externalType,
+						request: module.request,
+						userRequest: module.userRequest,
+					} ) );
+				expect( externalModules ).toMatchSnapshot(
+					'External modules should match snapshot'
+				);
+			} );
 		} );
 	}
 );
 
-test( 'module build works as expected', () => {
-	return new Promise( ( resolve ) => {
-		const testDirectory = path.join(
-			fixturesPath,
-			'wordpress-interactivity'
-		);
-		const outputDirectory = path.join(
-			__dirname,
-			'build',
-			'wordpress-interactivity'
-		);
+test.skip( 'module build works as expected', async () => {
+	const testDirectory = path.join( fixturesPath, 'wordpress-interactivity' );
+	const outputDirectory = path.join(
+		__dirname,
+		'build',
+		'wordpress-interactivity'
+	);
 
-		const options = Object.assign(
-			{
-				context: testDirectory,
-				entry: './index.js',
-				mode: 'production',
-				optimization: {
-					minimize: false,
-					chunkIds: 'named',
-					moduleIds: 'named',
-				},
-				output: {},
-				experiments: {},
+	mkdirp( outputDirectory );
+
+	const options = Object.assign(
+		{
+			context: testDirectory,
+			entry: './index.js',
+			mode: 'production',
+			optimization: {
+				minimize: false,
+				chunkIds: 'named',
+				moduleIds: 'named',
 			},
-			require( path.join( testDirectory, 'webpack.config.js' ) )
+			output: {},
+			experiments: {},
+		},
+		require( path.join( testDirectory, 'webpack.config.js' ) )
+	);
+	options.output.path = outputDirectory;
+	options.output.module = true;
+	options.experiments.outputModule = true;
+
+	const stats = await new Promise( ( resolve, reject ) =>
+		webpack( options, ( err, _stats ) => {
+			if ( err ) {
+				return reject( err );
+			}
+			resolve( _stats );
+		} )
+	);
+
+	console.log( 'complete' );
+	console.log( { stats } );
+
+	console.log( 1 );
+	const assetFiles = glob(
+		`${ outputDirectory }/+(*.asset|assets).@(json|php)`
+	);
+
+	console.log( 2 );
+	expect( assetFiles.length ).toBeGreaterThan( 0 );
+
+	console.log( 3 );
+	// Asset files should match.
+	assetFiles.forEach( ( assetFile ) => {
+		const assetBasename = path.basename( assetFile );
+
+		expect( fs.readFileSync( assetFile, 'utf-8' ) ).toMatchSnapshot(
+			`Asset file '${ assetBasename }' should match snapshot`
 		);
-		options.output.path = outputDirectory;
-		options.output.module = true;
-		options.experiments.outputModule = true;
-
-		webpack( options, ( err, stats ) => {
-			expect( err ).toBeNull();
-
-			const assetFiles = glob(
-				`${ outputDirectory }/+(*.asset|assets).@(json|php)`
-			);
-
-			expect( assetFiles.length ).toBeGreaterThan( 0 );
-
-			// Asset files should match.
-			assetFiles.forEach( ( assetFile ) => {
-				const assetBasename = path.basename( assetFile );
-
-				expect( fs.readFileSync( assetFile, 'utf-8' ) ).toMatchSnapshot(
-					`Asset file '${ assetBasename }' should match snapshot`
-				);
-			} );
-
-			const compareByModuleIdentifier = ( m1, m2 ) => {
-				const i1 = m1.identifier();
-				const i2 = m2.identifier();
-				if ( i1 < i2 ) return -1;
-				if ( i1 > i2 ) return 1;
-				return 0;
-			};
-
-			// Webpack stats external modules should match.
-			const externalModules = Array.from( stats.compilation.modules )
-				.filter( ( { externalType } ) => externalType )
-				.sort( compareByModuleIdentifier )
-				.map( ( module ) => ( {
-					externalType: module.externalType,
-					request: module.request,
-					userRequest: module.userRequest,
-				} ) );
-
-			expect( externalModules ).toMatchSnapshot(
-				'External modules should match snapshot'
-			);
-
-			resolve();
-		} );
 	} );
+	console.log( 4 );
+
+	const compareByModuleIdentifier = ( m1, m2 ) => {
+		const i1 = m1.identifier();
+		const i2 = m2.identifier();
+		if ( i1 < i2 ) return -1;
+		if ( i1 > i2 ) return 1;
+		return 0;
+	};
+	console.log( 5 );
+
+	// Webpack stats external modules should match.
+	const externalModules = Array.from( stats.compilation.modules )
+		.filter( ( { externalType } ) => externalType )
+		.sort( compareByModuleIdentifier )
+		.map( ( module ) => ( {
+			externalType: module.externalType,
+			request: module.request,
+			userRequest: module.userRequest,
+		} ) );
+	console.log( 6 );
+
+	console.log( { externalModules } );
+	expect( externalModules ).toMatchSnapshot(
+		'External modules should match snapshot'
+	);
 } );

@@ -55,11 +55,24 @@ class DependencyExtractionWebpackPlugin {
 		this.useModules = false;
 
 		/**
+		 * Offload externalization work to the ExternalsPlugin.
 		 * @type {webpack.ExternalsPlugin}
 		 */
-		this.externalsPlugin = undefined;
+		this.externalsPlugin = new webpack.ExternalsPlugin(
+			'window',
+			this.externalizeWpDeps.bind( this )
+		);
 	}
 
+	// eslint-disable-next-line jsdoc/check-line-alignment
+	/**
+		* @type {((
+			data: ExternalItemFunctionData,
+			callback: (
+				err?: null | Error,
+				result?: string | boolean | string[] | { [index: string]: any }
+			) => void
+	  ) => void)} */
 	externalizeWpDeps( { request }, callback ) {
 		let externalRequest;
 
@@ -88,7 +101,12 @@ class DependencyExtractionWebpackPlugin {
 		if ( externalRequest ) {
 			this.externalizedDeps.add( request );
 
-			return callback( null, externalRequest );
+			return callback(
+				null,
+				this.useModules
+					? `module ${ externalRequest }`
+					: externalRequest
+			);
 		}
 
 		return callback();
@@ -137,11 +155,7 @@ class DependencyExtractionWebpackPlugin {
 	apply( compiler ) {
 		this.useModules = Boolean( compiler.options.output?.module );
 
-		// Offload externalization work to the ExternalsPlugin.
-		this.externalsPlugin = new webpack.ExternalsPlugin(
-			this.useModules ? 'module' : 'window',
-			this.externalizeWpDeps.bind( this )
-		);
+		this.externalsPlugin.type = this.useModules ? 'module' : 'window';
 
 		this.externalsPlugin.apply( compiler );
 
@@ -154,7 +168,11 @@ class DependencyExtractionWebpackPlugin {
 						stage: compiler.webpack.Compilation
 							.PROCESS_ASSETS_STAGE_ANALYSE,
 					},
-					() => this.addAssets( compilation )
+					() => {
+						// console.log( 'add' );
+						this.addAssets( compilation );
+						// console.log( 'added' );
+					}
 				);
 			}
 		);
@@ -334,23 +352,29 @@ class DependencyExtractionWebpackPlugin {
 			chunk.files.add( assetFilename );
 		}
 
+		// console.log( 'x' );
+
 		if ( combineAssets ) {
 			const outputFolder = compilation.outputOptions.path;
 
+			// console.log( 'y' );
 			const assetsFilePath = path.resolve(
 				outputFolder,
 				combinedOutputFile ||
 					'assets.' + ( outputFormat === 'php' ? 'php' : 'json' )
 			);
+			// console.log( 'z' );
 			const assetsFilename = path.relative(
 				outputFolder,
 				assetsFilePath
 			);
+			// console.log( 'xx' );
 
 			// Add source into compilation for webpack to output.
 			compilation.assets[ assetsFilename ] = new RawSource(
 				this.stringify( combinedAssetsData )
 			);
+			// console.log( 'yy' );
 		}
 	}
 }
