@@ -64,26 +64,16 @@ class DependencyExtractionWebpackPlugin {
 		);
 	}
 
-	// eslint-disable-next-line jsdoc/check-line-alignment
-	/**
-		* @type {((
-			data: ExternalItemFunctionData,
-			callback: (
-				err?: null | Error,
-				result?: string | boolean | string[] | { [index: string]: any }
-			) => void
-	  ) => void)} */
 	externalizeWpDeps( { request }, callback ) {
 		let externalRequest;
 
+		// Handle via options.requestToExternal(Module)  first.
 		if ( this.useModules ) {
-			// Handle via options.requestToExternal first.
 			if ( typeof this.options.requestToExternalModule === 'function' ) {
 				externalRequest =
 					this.options.requestToExternalModule( request );
 			}
 		}
-		// Handle via options.requestToExternal first.
 		else if ( typeof this.options.requestToExternal === 'function' ) {
 			externalRequest = this.options.requestToExternal( request );
 		}
