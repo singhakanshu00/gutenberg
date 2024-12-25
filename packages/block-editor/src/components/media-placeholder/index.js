@@ -114,6 +114,60 @@ const URLSelectionUI = ( { src, onChangeSrc, onSelectURL } ) => {
 	);
 };
 
+/**
+ * A component for rendering a media placeholder in the block editor. This placeholder provides options to upload, select, or manage media.
+ *
+ * @see https://github.com/WordPress/gutenberg/blob/HEAD/packages/block-editor/src/components/media-placeholder/README.md
+ *
+ * @example
+ * ```jsx
+ * import { MediaPlaceholder } from './MediaPlaceholder';
+ *
+ * function Example() {
+ *   const handleSelect = (media) => console.log(media);
+ *
+ *   return (
+ *     <MediaPlaceholder
+ *       allowedTypes={['image']}
+ *       onSelect={handleSelect}
+ *       labels={{
+ *         title: 'Upload Image',
+ *         instructions: 'Drag an image here, or select from media library.',
+ *       }}
+ *     />
+ *   );
+ * }
+ * ```
+ *
+ * @param {Object}   props                       Component props.
+ * @param {Object}   props.value                 Selected media value.
+ * @param {Array}    props.allowedTypes          Allowed media MIME types.
+ * @param {string}   props.className             Additional CSS class names.
+ * @param {Element}  props.icon                  Placeholder icon.
+ * @param {Object}   props.labels                Labels for the placeholder (e.g., title, instructions).
+ * @param {Element}  props.mediaPreview          Preview of the selected media.
+ * @param {Array}    props.notices               Notices to display in the placeholder.
+ * @param {boolean}  props.isAppender            Whether this is an appender placeholder.
+ * @param {string}   props.accept                Accepted file types.
+ * @param {boolean}  props.addToGallery          Whether to add media to an existing gallery.
+ * @param {boolean}  props.multiple              Whether multiple files can be uploaded.
+ * @param {boolean}  props.handleUpload          Whether the component should handle file uploads.
+ * @param {boolean}  props.disableDropZone       Disable the drop zone for drag-and-drop uploads.
+ * @param {boolean}  props.disableMediaButtons   Disable media upload buttons.
+ * @param {Function} props.onError               Callback for errors.
+ * @param {Function} props.onSelect              Callback for selecting media.
+ * @param {Function} props.onCancel              Callback for cancel actions.
+ * @param {Function} props.onSelectURL           Callback for selecting media by URL.
+ * @param {Function} props.onToggleFeaturedImage Callback for toggling the featured image.
+ * @param {Function} props.onDoubleClick         Callback for double-click events.
+ * @param {Function} props.onFilesPreUpload      Callback before file uploads.
+ * @param {Function} props.onHTMLDrop            Deprecated callback for handling HTML drops.
+ * @param {Element}  props.children              Additional child elements to render.
+ * @param {Function} props.mediaLibraryButton    Custom media library button component.
+ * @param {Function} props.placeholder           Custom placeholder render function.
+ * @param {Object}   props.style                 Inline styles for the placeholder.
+ * @return {Element}  The rendered media placeholder component.
+ */
 export function MediaPlaceholder( {
 	value = {},
 	allowedTypes,
