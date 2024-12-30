@@ -24,10 +24,20 @@ const meta = {
 		value: {
 			control: 'object',
 			description: 'The current value of the link (URL and title)',
+			table: {
+				type: {
+					summary: 'object',
+				},
+			},
 		},
 		settings: {
 			control: 'array',
 			description: 'Custom settings for the link control',
+			table: {
+				type: {
+					summary: 'array',
+				},
+			},
 		},
 		onChange: {
 			action: 'onChange',
