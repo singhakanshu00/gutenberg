@@ -24,6 +24,12 @@ import { decodeEntities } from '@wordpress/html-entities';
 import { __, sprintf } from '@wordpress/i18n';
 import { pin } from '@wordpress/icons';
 import { useEntityRecords } from '@wordpress/core-data';
+import { useSelect } from '@wordpress/data';
+
+/**
+ * Internal dependencies
+ */
+import { store as coreEditorStore } from '../../../../packages/editor';
 
 export default function CategoriesEdit( {
 	attributes: {
@@ -35,6 +41,7 @@ export default function CategoriesEdit( {
 		label,
 		showLabel,
 		taxonomy: taxonomySlug,
+		showCurrentTaxonomy,
 	},
 	setAttributes,
 	className,
@@ -63,6 +70,11 @@ export default function CategoriesEdit( {
 		taxonomySlug,
 		query
 	);
+
+	const isSingular = useSelect( ( select ) => {
+		const currentPostType = select( coreEditorStore ).getCurrentPostType();
+		return currentPostType && currentPostType !== 'wp_template';
+	}, [] );
 
 	const getCategoriesList = ( parentId ) => {
 		if ( ! categories?.length ) {
@@ -209,13 +221,26 @@ export default function CategoriesEdit( {
 						onChange={ toggleAttribute( 'displayAsDropdown' ) }
 					/>
 					{ displayAsDropdown && (
-						<ToggleControl
-							__nextHasNoMarginBottom
-							className="wp-block-categories__indentation"
-							label={ __( 'Show label' ) }
-							checked={ showLabel }
-							onChange={ toggleAttribute( 'showLabel' ) }
-						/>
+						<>
+							<ToggleControl
+								__nextHasNoMarginBottom
+								className="wp-block-categories__indentation"
+								label={ __( 'Show label' ) }
+								checked={ showLabel }
+								onChange={ toggleAttribute( 'showLabel' ) }
+							/>
+							{ ! isSingular && (
+								<ToggleControl
+									__nextHasNoMarginBottom
+									className="wp-block-categories__indentation"
+									label={ __( 'Show Current Taxonomy' ) }
+									checked={ showCurrentTaxonomy }
+									onChange={ toggleAttribute(
+										'showCurrentTaxonomy'
+									) }
+								/>
+							) }
+						</>
 					) }
 					<ToggleControl
 						__nextHasNoMarginBottom
