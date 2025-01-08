@@ -24,12 +24,6 @@ import { decodeEntities } from '@wordpress/html-entities';
 import { __, sprintf } from '@wordpress/i18n';
 import { pin } from '@wordpress/icons';
 import { useEntityRecords } from '@wordpress/core-data';
-import { useSelect } from '@wordpress/data';
-
-/**
- * Internal dependencies
- */
-import { store as coreEditorStore } from '../../../../packages/editor';
 
 export default function CategoriesEdit( {
 	attributes: {
@@ -70,11 +64,6 @@ export default function CategoriesEdit( {
 		taxonomySlug,
 		query
 	);
-
-	const isSingular = useSelect( ( select ) => {
-		const currentPostType = select( coreEditorStore ).getCurrentPostType();
-		return currentPostType && currentPostType !== 'wp_template';
-	}, [] );
 
 	const getCategoriesList = ( parentId ) => {
 		if ( ! categories?.length ) {
@@ -144,13 +133,15 @@ export default function CategoriesEdit( {
 					</VisuallyHidden>
 				) }
 				<select id={ selectId }>
-					<option>
-						{ sprintf(
-							/* translators: %s: taxonomy's singular name */
-							__( 'Select %s' ),
-							taxonomy.labels.singular_name
-						) }
-					</option>
+					{ ! showCurrentTaxonomy && (
+						<option>
+							{ sprintf(
+								/* translators: %s: taxonomy's singular name */
+								__( 'Select %s' ),
+								taxonomy.labels.singular_name
+							) }
+						</option>
+					) }
 					{ categoriesList.map( ( category ) =>
 						renderCategoryDropdownItem( category, 0 )
 					) }
@@ -229,17 +220,18 @@ export default function CategoriesEdit( {
 								checked={ showLabel }
 								onChange={ toggleAttribute( 'showLabel' ) }
 							/>
-							{ ! isSingular && (
-								<ToggleControl
-									__nextHasNoMarginBottom
-									className="wp-block-categories__indentation"
-									label={ __( 'Show Current Taxonomy' ) }
-									checked={ showCurrentTaxonomy }
-									onChange={ toggleAttribute(
-										'showCurrentTaxonomy'
-									) }
-								/>
-							) }
+							<ToggleControl
+								__nextHasNoMarginBottom
+								className="wp-block-categories__indentation"
+								label={ __( 'Show Current Taxonomy' ) }
+								checked={ showCurrentTaxonomy }
+								onChange={ toggleAttribute(
+									'showCurrentTaxonomy'
+								) }
+								help={ __(
+									'Select the current taxonomy by default in the archive pages.'
+								) }
+							/>
 						</>
 					) }
 					<ToggleControl
