@@ -24,3 +24,5 @@ export function getTemplatePartIcon( iconName ) {
 	}
 	return symbolFilledIcon;
 }
+
+export const templateParts = [ 'header', 'footer', 'sidebar' ];

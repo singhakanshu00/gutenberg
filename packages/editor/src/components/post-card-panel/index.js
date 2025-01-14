@@ -26,6 +26,10 @@ import { unlock } from '../../lock-unlock';
 import PostActions from '../post-actions';
 import usePageTypeBadge from '../../utils/pageTypeBadge';
 import { getTemplateInfo } from '../../utils/get-template-info';
+import {
+	getTemplatePartIcon,
+	templateParts,
+} from '../../utils/get-template-part-icon';
 const { Badge } = unlock( componentsPrivateApis );
 
 /**
@@ -104,7 +108,14 @@ export default function PostCardPanel( {
 				className="editor-post-card-panel__header"
 				align="flex-start"
 			>
-				<Icon className="editor-post-card-panel__icon" icon={ icon } />
+				<Icon
+					className="editor-post-card-panel__icon"
+					icon={
+						templateParts.includes( icon )
+							? getTemplatePartIcon( icon )
+							: icon
+					}
+				/>
 				<Text
 					numberOfLines={ 2 }
 					truncate
