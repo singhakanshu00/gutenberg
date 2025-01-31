@@ -89,6 +89,7 @@ function ResizableFrame( {
 	/** The default (unresized) width/height of the frame, based on the space available in the viewport. */
 	defaultSize,
 	innerContentStyle,
+	disableZoom,
 } ) {
 	const history = useHistory();
 	const { path, query } = useLocation();
@@ -254,7 +255,7 @@ function ResizableFrame( {
 				}
 			} }
 			whileHover={
-				canvas === 'view'
+				canvas === 'view' && ! disableZoom
 					? {
 							scale: 1.005,
 							transition: {
