@@ -236,7 +236,6 @@ function Layout() {
 													gradientValue ??
 													backgroundColor,
 											} }
-											disableZoom
 										>
 											{ areas.preview }
 										</ResizableFrame>
