@@ -19,7 +19,11 @@ function DataViewsPagination() {
 	const {
 		view,
 		onChangeView,
-		paginationInfo: { totalItems = 0, totalPages, enablePerView = true },
+		paginationInfo: {
+			totalItems = 0,
+			totalPages,
+			enablePerPageFilter = true,
+		},
 	} = useContext( DataViewsContext );
 
 	if ( ! totalItems || ! totalPages ) {
@@ -55,7 +59,7 @@ function DataViewsPagination() {
 				justify="end"
 				spacing={ 6 }
 			>
-				{ enablePerView && (
+				{ enablePerPageFilter && (
 					<HStack
 						justify="flex-start"
 						expanded={ false }

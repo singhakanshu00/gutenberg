@@ -41,7 +41,7 @@ type DataViewsProps< Item > = {
 	paginationInfo: {
 		totalItems: number;
 		totalPages: number;
-		enablePerView: boolean;
+		enablePerPageFilter: boolean;
 	};
 	defaultLayouts: SupportedLayouts;
 	selection?: string[];

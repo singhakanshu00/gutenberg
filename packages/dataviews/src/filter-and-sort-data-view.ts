@@ -41,7 +41,7 @@ export function filterSortAndPaginate< Item >(
 	paginationInfo: {
 		totalItems: number;
 		totalPages: number;
-		enablePerView: boolean;
+		enablePerPageFilter: boolean;
 	};
 } {
 	if ( ! data ) {
@@ -50,7 +50,7 @@ export function filterSortAndPaginate< Item >(
 			paginationInfo: {
 				totalItems: 0,
 				totalPages: 0,
-				enablePerView: false,
+				enablePerPageFilter: false,
 			},
 		};
 	}
@@ -168,7 +168,7 @@ export function filterSortAndPaginate< Item >(
 		paginationInfo: {
 			totalItems,
 			totalPages,
-			enablePerView: true,
+			enablePerPageFilter: true,
 		},
 	};
 }

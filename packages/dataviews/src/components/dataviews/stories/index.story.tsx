@@ -68,7 +68,7 @@ export const Empty = () => {
 			paginationInfo={ {
 				totalItems: 0,
 				totalPages: 0,
-				enablePerView: true,
+				enablePerPageFilter: true,
 			} }
 			data={ [] }
 			view={ view }
